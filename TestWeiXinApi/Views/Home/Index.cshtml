@@ -1,0 +1,130 @@
+﻿@{
+    ViewBag.Title = "测试微信接口";
+}
+<div id="vue1">
+    <div class="panel panel-body">
+        <div class="form-group">
+            <input class="form-control col-md-12" v-model="UserName" type="text" placeholder="请输入业务员名称" />
+            <br />
+            <input class="form-control" type="text" v-model="AgentId" placeholder="请输入业务员Id" />
+            <br />
+            <input class="form-control" type="text" v-model="UniqueCode" placeholder="请输入机器码" />
+            <br />
+            <input class="form-control" type="text" v-model="AppId" placeholder="请输入AppId" />
+            <div>{{AppId|StrLength}}/18</div>
+            <br />
+            <input class="form-control" type="text" v-model="AppSecret" placeholder="请输入AppSecret" />
+            <div>{{AppSecret|StrLength}}/32</div>
+            <br />
+            <input class="form-control" type="text" v-model="SecretKey" placeholder="请输入授权码" />
+            <div>{{SecretKey|StrLength}}</div>
+            <br />
+        </div>
+        <div class="form-group">
+            请选择过期时间：<input class="form-control" id="expireTime" type="date" v-model="expireTime" placeholder="请选择过期时间" />
+        </div>
+        <button class="btn btn-success form-control" v-on:click="getToken">获取token</button>
+        <div class="form-group">
+            <br />
+            <input class="form-control" type="text" v-model="token" placeholder="这里展示获取的token" required />
+        </div>
+        <div class="form-group">
+            <button class="form-control btn-success" v-on:click="getUrlClick('getHomeUrl')">跳转首页</button><br />
+            <button class="form-control btn-success" v-on:click="getUrlClick('getAgentUrl')">跳转我的业务员</button><br />
+            <button class="form-control btn-success" v-on:click="getUrlClick('getQuoteUrl')">跳转我的报价单</button><br />
+            <button class="form-control btn-success" v-on:click="getUrlClick('getOrderUrl')">跳转我的预约单</button>
+        </div>
+    </div>
+</div>
+<script>
+    var baseUrl = "http://wx.91bihu.com";
+    var vm = new Vue({
+        el: '#vue1',
+        data: {
+            UserName: '',
+            AgentId:0,
+            UniqueCode: '',
+            AppId: '',
+            AppSecret: '',
+            token: '',
+            DataJson: {},
+            getTokenUrl: baseUrl + "/api/Unite/Login",
+            getHomeUrl: baseUrl + "/",
+            getOrderUrl: baseUrl + "/Order/OrderList",
+            getQuoteUrl: baseUrl + "/Quote/MyQuote",
+            getAgentUrl: baseUrl + "/Agent/MyAgent",
+            tokenUrlStr: "?token=",
+            expireTime: '',
+            SecretKey: ''
+        },
+        filters: {
+            StrLength: function (val) {
+                if (val != null) {
+                    return val.length;
+                }
+                return 0;
+            }
+        },
+        methods: {
+            getToken: function () {
+                var _self = this;
+                if (_self.UserName == null || _self.UserName == "") {
+                    alert("请填写业务员名称");
+                    return;
+                }
+                if (_self.AgentId == null || _self.AgentId == "") {
+                    alert("请填写AgentId");
+                    return;
+                }
+                if (_self.expireTime == null || _self.expireTime == "") {
+                    alert("请填写过期时间");
+                    return;
+                }
+                if (_self.SecretKey == null || _self.SecretKey == "") {
+                    alert("请填写授权码");
+                    return;
+                }
+                $.ajax({
+                    url: '@Url.Action("GetUrl","Home")',
+                    type: "get",
+                    data: {
+                        UserName: _self.UserName,
+                        AgentId: parseInt(_self.AgentId),
+                        UniqueCode: _self.UniqueCode,
+                        AppId: _self.AppId,
+                        AppSecret: _self.AppSecret,
+                        ExpireTime: _self.expireTime,
+                        SecretKey: _self.SecretKey
+                    },
+                    dataType: "json",
+                    success: function (data) {
+                        if (data != null && data.length == 5) {
+                            alert(data);
+                            return;
+                        }
+                        if (data.Item1 != undefined && data.Item1 != null) {
+                            alert(data.Item3);
+                            return;
+                        }
+                        var jsonData = JSON.parse(data);
+                        if (jsonData.code!=null&&jsonData.code == 200) {
+                            _self.token = jsonData.token;
+                        } else {
+                            if (jsonData.msg != null && jsonData.code != undefined) {
+                                alert(jsonData.msg);
+                            }
+                        }
+                    }
+                });
+            },
+            getUrlClick: function (urlName) {
+                if (this.token != null && this.token != "") {
+                    window.location = vm.$data[urlName] + this.tokenUrlStr + this.token;
+                } else {
+                    window.location = vm.$data[urlName];
+                }
+            }
+        }
+    });
+</script>
+
